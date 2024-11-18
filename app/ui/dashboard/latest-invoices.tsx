@@ -19,7 +19,6 @@ export default async function LatestInvoices({
 
         <div className="bg-white px-6">
           {latestInvoices.map((invoice, i) => {
-            {console.log(latestInvoices)}
             return (
               <div
                 key={invoice.id}
@@ -30,8 +29,8 @@ export default async function LatestInvoices({
                   },
                 )}
               >
-                <div className="flex items-center">
-                   <Image
+                <div key={invoice.customers.id} className="flex items-center">
+                   <Image 
                      src={invoice.customers.image_url}
                      alt={`${invoice.customers.name}'s profile picture`}
                      className="mr-4 rounded-full"
