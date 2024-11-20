@@ -8,7 +8,6 @@ import { usePathname, useSearchParams } from 'next/navigation';
 
 
 export default function Pagination({ totalPages }: { totalPages: number }) {
-  console.log(totalPages)
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentPage = Number(searchParams.get('page')) || 1;
@@ -43,7 +42,7 @@ export default function Pagination({ totalPages }: { totalPages: number }) {
 
             return (
               <PaginationNumber
-                key={page}
+                key={index}
                 href={createPageURL(page)}
                 page={page}
                 position={position}

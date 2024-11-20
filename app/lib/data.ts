@@ -1,4 +1,4 @@
-import {createClient} from '@supabase/supabase-js';
+import { supabase } from './supabase';
 import {
   CustomerField,
   CustomersTableType,
@@ -10,21 +10,12 @@ import {
 import { formatCurrency } from './utils';
 import { off } from 'process';
 
-const supabaseUrl: string = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey: string = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+
 
 export async function fetchRevenue() {
   try {
-    // Artificially delay a response for demo purposes.
-    // Don't do this in production :)
-
-    // console.log('Fetching revenue data...');
-    // await new Promise((resolve) => setTimeout(resolve, 3000));
-
     const {data} = await supabase.from('revenue').select('*');
-    // console.log('Data fetch completed after 3 seconds.');
-    //console.log(data)
+
     return data;
   } catch (error) {
     console.error('Database Error:', error);
@@ -90,7 +81,7 @@ export async function fetchFilteredInvoices(
     
     const { data: invoices, error } = await supabase
     .rpc('get_invoices', { query, items_per_page: ITEMS_PER_PAGE, offset_val: offset });
-    //console.log(data, error)
+
     return invoices;
   } catch (error) {
     console.error('Database Error:', error);
@@ -103,11 +94,10 @@ export async function fetchInvoicesPages(query: string) {
 
     const { data, error } = await supabase
     .rpc('get_invoice_count', { query });
-    //console.log(data, error)
-    
+
     const totalPages = Math.ceil(Number(data) / ITEMS_PER_PAGE);
-    //console.log(totalPages)
-    //return totalPages;
+    
+    return totalPages;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch total number of invoices.');
@@ -116,23 +106,17 @@ export async function fetchInvoicesPages(query: string) {
 
 export async function fetchInvoiceById(id: string) {
   try {
-    const data = await sql<InvoiceForm>`
-      SELECT
-        invoices.id,
-        invoices.customer_id,
-        invoices.amount,
-        invoices.status
-      FROM invoices
-      WHERE invoices.id = ${id};
-    `;
+    console.log(id)
+    const {data, error} = await supabase.from('invoices').select('id, customer_id, amount, status').eq('id', id);
+    console.log(data, error)
 
-    const invoice = data.rows.map((invoice) => ({
+    const invoice = data?.map((invoice) => ({
       ...invoice,
       // Convert amount from cents to dollars
       amount: invoice.amount / 100,
     }));
 
-    return invoice[0];
+    return invoice;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch invoice.');
@@ -141,15 +125,8 @@ export async function fetchInvoiceById(id: string) {
 
 export async function fetchCustomers() {
   try {
-    const data = await sql<CustomerField>`
-      SELECT
-        id,
-        name
-      FROM customers
-      ORDER BY name ASC
-    `;
-
-    const customers = data.rows;
+    const {data: customers, error} = await supabase.from('customers').select('id, name').order('name')
+   
     return customers;
   } catch (err) {
     console.error('Database Error:', err);
