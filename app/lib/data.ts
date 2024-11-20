@@ -8,6 +8,7 @@ import {
   Revenue,
 } from './definitions';
 import { formatCurrency } from './utils';
+import { off } from 'process';
 
 const supabaseUrl: string = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey: string = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -52,31 +53,26 @@ export async function fetchCardData() {
     // You can probably combine these into a single SQL query
     // However, we are intentionally splitting them to demonstrate
     // how to initialize multiple queries in parallel with JS.
-    const {count: invoiceCount, error: invoiceError} = await supabase.from('invoices').select('*', {count: 'exact'});
+    const {count: numberOfInvoices, error: invoiceCountError} = await supabase.from('invoices').select('*', {count: 'exact'});
     
-    const {count: customerCount, error: customerCountError} = await supabase.from('customers').select('*', {count: 'exact', head:true});
+    const {count: numberOfCustomers, error: customerCountError} = await supabase.from('customers').select('*', {count: 'exact'});
 
-    // const invoiceStatusPromise = sql`SELECT
-    //      SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
-    //      SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
-    //      FROM invoices`;
-    const {data: invoiceStatusPromise, error: invoiceStatusError} = await supabase.from('invoices').select(`
-      paid: sum(amount, status=eq.paid),
-      pending: sum(amount, status=eq.pending)
-    `);
-    console.log(invoiceError, customerCountError, invoiceStatusError)
+    const {data: invoicePaidData, error: invoicePaidError} = await supabase.from
+    ('invoices').select('amount').eq('status', 'paid')
+    
+    const {data: invoicePendingData, error: invoicePendingError} = await supabase.from('invoices').select('amount').eq('status', 'pending');
 
-    const numberOfInvoices = Number(invoiceCount?.[0]?.count ?? '0');
-    const numberOfCustomers = Number(customerCount?.[0]?.count ?? '0');
-    const totalPaidInvoices = formatCurrency(invoiceStatusPromise?.[0]?.paid ?? '0');
-    const totalPendingInvoices = formatCurrency(invoiceStatusPromise?.[0]?.pending  ?? '0');
+    const totalPaidInvoices = invoicePaidData?.reduce((acc, obj) => acc + obj.amount, 0);
+
+    const totalPendingInvoices = invoicePendingData?.reduce((acc, obj) => acc + obj.amount, 0);
 
     return {
-      numberOfCustomers,
-      numberOfInvoices,
+      numberOfInvoices, 
+      numberOfCustomers, 
       totalPaidInvoices,
-      totalPendingInvoices,
-    };
+      totalPendingInvoices
+    }
+
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch card data.');
@@ -91,28 +87,11 @@ export async function fetchFilteredInvoices(
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
   try {
-    const invoices = await sql<InvoicesTable>`
-      SELECT
-        invoices.id,
-        invoices.amount,
-        invoices.date,
-        invoices.status,
-        customers.name,
-        customers.email,
-        customers.image_url
-      FROM invoices
-      JOIN customers ON invoices.customer_id = customers.id
-      WHERE
-        customers.name ILIKE ${`%${query}%`} OR
-        customers.email ILIKE ${`%${query}%`} OR
-        invoices.amount::text ILIKE ${`%${query}%`} OR
-        invoices.date::text ILIKE ${`%${query}%`} OR
-        invoices.status ILIKE ${`%${query}%`}
-      ORDER BY invoices.date DESC
-      LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
-    `;
-
-    return invoices.rows;
+    
+    const { data: invoices, error } = await supabase
+    .rpc('get_invoices', { query, items_per_page: ITEMS_PER_PAGE, offset_val: offset });
+    //console.log(data, error)
+    return invoices;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch invoices.');
@@ -121,19 +100,14 @@ export async function fetchFilteredInvoices(
 
 export async function fetchInvoicesPages(query: string) {
   try {
-    const count = await sql`SELECT COUNT(*)
-    FROM invoices
-    JOIN customers ON invoices.customer_id = customers.id
-    WHERE
-      customers.name ILIKE ${`%${query}%`} OR
-      customers.email ILIKE ${`%${query}%`} OR
-      invoices.amount::text ILIKE ${`%${query}%`} OR
-      invoices.date::text ILIKE ${`%${query}%`} OR
-      invoices.status ILIKE ${`%${query}%`}
-  `;
 
-    const totalPages = Math.ceil(Number(count.rows[0].count) / ITEMS_PER_PAGE);
-    return totalPages;
+    const { data, error } = await supabase
+    .rpc('get_invoice_count', { query });
+    //console.log(data, error)
+    
+    const totalPages = Math.ceil(Number(data) / ITEMS_PER_PAGE);
+    //console.log(totalPages)
+    //return totalPages;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch total number of invoices.');
