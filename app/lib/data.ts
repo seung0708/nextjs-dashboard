@@ -1,16 +1,8 @@
 import { supabase } from './supabase';
 import {
-  CustomerField,
   CustomersTableType,
-  InvoiceForm,
-  InvoicesTable,
-  LatestInvoice,
-  Revenue,
 } from './definitions';
 import { formatCurrency } from './utils';
-import { off } from 'process';
-
-
 
 export async function fetchRevenue() {
   try {
@@ -44,14 +36,14 @@ export async function fetchCardData() {
     // You can probably combine these into a single SQL query
     // However, we are intentionally splitting them to demonstrate
     // how to initialize multiple queries in parallel with JS.
-    const {count: numberOfInvoices, error: invoiceCountError} = await supabase.from('invoices').select('*', {count: 'exact'});
+    const {count: numberOfInvoices} = await supabase.from('invoices').select('*', {count: 'exact'});
     
-    const {count: numberOfCustomers, error: customerCountError} = await supabase.from('customers').select('*', {count: 'exact'});
+    const {count: numberOfCustomers } = await supabase.from('customers').select('*', {count: 'exact'});
 
-    const {data: invoicePaidData, error: invoicePaidError} = await supabase.from
+    const {data: invoicePaidData} = await supabase.from
     ('invoices').select('amount').eq('status', 'paid')
     
-    const {data: invoicePendingData, error: invoicePendingError} = await supabase.from('invoices').select('amount').eq('status', 'pending');
+    const {data: invoicePendingData} = await supabase.from('invoices').select('amount').eq('status', 'pending');
 
     const totalPaidInvoices = invoicePaidData?.reduce((acc, obj) => acc + obj.amount, 0);
 
@@ -79,7 +71,7 @@ export async function fetchFilteredInvoices(
 
   try {
     
-    const { data: invoices, error } = await supabase
+    const { data: invoices} = await supabase
     .rpc('get_invoices', { query, items_per_page: ITEMS_PER_PAGE, offset_val: offset });
     //console.log(invoices, error)
     return invoices;
@@ -92,7 +84,7 @@ export async function fetchFilteredInvoices(
 export async function fetchInvoicesPages(query: string) {
   try {
 
-    const { data, error } = await supabase
+    const { data} = await supabase
     .rpc('get_invoice_count', { query });
     
     const totalPages = Math.ceil(Number(data) / ITEMS_PER_PAGE);
@@ -124,7 +116,7 @@ export async function fetchInvoiceById(id: string) {
 
 export async function fetchCustomers() {
   try {
-    const {data: customers, error} = await supabase.from('customers').select('id, name').order('name')
+    const {data: customers} = await supabase.from('customers').select('id, name').order('name')
    
     return customers;
   } catch (err) {
