@@ -19,7 +19,8 @@ export default function EditInvoiceForm({
   invoice: InvoiceForm;
   customers: CustomerField[];
 }) {
-  const updateInvoiceWithId = updateInvoice.bind(null, invoice?.id);
+  const updateInvoiceWithId = updateInvoice.bind(null, invoice.id);
+  console.log(invoice)
   return (
     <form action={updateInvoiceWithId}>
       <div className="rounded-md bg-gray-50 p-4 md:p-6">
@@ -33,7 +34,7 @@ export default function EditInvoiceForm({
               id="customer"
               name="customerId"
               className="peer block w-full cursor-pointer rounded-md border border-gray-200 py-2 pl-10 text-sm outline-2 placeholder:text-gray-500"
-              defaultValue={invoice?.customer_id}
+              defaultValue={invoice.customer_id}
             >
               <option value="" disabled>
                 Select a customer

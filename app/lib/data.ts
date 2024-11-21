@@ -81,7 +81,7 @@ export async function fetchFilteredInvoices(
     
     const { data: invoices, error } = await supabase
     .rpc('get_invoices', { query, items_per_page: ITEMS_PER_PAGE, offset_val: offset });
-
+    //console.log(invoices, error)
     return invoices;
   } catch (error) {
     console.error('Database Error:', error);
@@ -94,19 +94,18 @@ export async function fetchInvoicesPages(query: string) {
 
     const { data, error } = await supabase
     .rpc('get_invoice_count', { query });
-
+    
     const totalPages = Math.ceil(Number(data) / ITEMS_PER_PAGE);
     
     return totalPages;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch total number of invoices.');
-  }
+  } 
 }
 
 export async function fetchInvoiceById(id: string) {
   try {
-    console.log(id)
     const {data, error} = await supabase.from('invoices').select('id, customer_id, amount, status').eq('id', id);
     console.log(data, error)
 
@@ -116,7 +115,7 @@ export async function fetchInvoiceById(id: string) {
       amount: invoice.amount / 100,
     }));
 
-    return invoice;
+    return invoice[0];
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch invoice.');

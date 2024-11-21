@@ -25,8 +25,14 @@ export async function createInvoice(formData: FormData) {
     const amountInCents = amount * 100;
     const date = new Date().toISOString().split('T')[0];
 
-    await supabase.from('invoices').insert({customer_id: customerId, amount: amountInCents, status, date});
+    try {
+        await supabase.from('invoices').insert({customer_id: customerId, amount: amountInCents, status, date});
 
+    } catch(error) {
+        return {
+            message: `Database Error: Failed to create invoice (${error})`
+        }
+    }
     revalidatePath('/dashboard/invoices');
     redirect('/dashboard/invoices');
 }
@@ -40,11 +46,26 @@ export async function updateInvoice(id: string, formData: FormData) {
         status: formData.get('status')
     });
     const amountInCents = amount * 100;
+    try {
+        const {data, error} = await supabase.from('invoices').update({customer_id: customerId, amount: amountInCents, status}).eq('id', id);
+    } catch(error) {
+        return {
+            message: `Database Error: Failed to update invoice (${error}`
+        }
+    }
+    revalidatePath('/dashboard/invoices');
+    redirect('/dashboard/invoices');
+}
 
-    const {data, error} = await supabase.from('invoices').update({customer_id: customerId, amount: amountInCents, status}).eq('id', id);
+export async function deleteInvoice(id: string) {
+    //throw new Error('Failed to delete Invoice')
+    try {
+        await supabase.from('invoices').delete().eq('id', id);
+    } catch (error) {
+        return {
+            message: `Database Error: Failed to delete Invoice (${error})`
+        }
+    }
 
-    console.log(data, error)
-
-    // revalidatePath('/dashboard/invoices');
-    // redirect('/dashboard/invoices');
+    revalidatePath('/dashboard/invoices')
 }
