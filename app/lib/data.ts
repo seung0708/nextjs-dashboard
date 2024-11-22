@@ -3,7 +3,6 @@ import {
   CustomersTableType,
   CustomerField,
   Revenue,
-  LatestInvoiceRaw,
   InvoicesTable,
   InvoiceForm
 } from './definitions';
