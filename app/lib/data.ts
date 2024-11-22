@@ -22,7 +22,7 @@ export async function fetchRevenue() {
 
 export async function fetchLatestInvoices() {
   try {
-    const {data: result } = await supabase.from('invoices').select('amount, customers(id, name, image_url, email), id').order('date', {ascending: false}).limit(5) as {data: LatestInvoiceRaw[]}
+    const {data: result } = await supabase.from('invoices').select('amount, customers(id, name, image_url, email), id').order('date', {ascending: false}).limit(5)
   
     const latestInvoices = result?.map((invoice) => ({
       ...invoice,
