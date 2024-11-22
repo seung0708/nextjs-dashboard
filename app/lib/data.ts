@@ -23,7 +23,7 @@ export async function fetchRevenue() {
 export async function fetchLatestInvoices() {
   try {
     const {data: result } = await supabase.from('invoices').select('amount, customers(id, name, image_url, email), id').order('date', {ascending: false}).limit(5)
-    console.log(JSON.stringify(result, null, 2));
+
     const latestInvoices: LatestInvoiceRaw[] = result?.map((invoice) => ({
       ...invoice,
       customers: Array.isArray(invoice.customers) ? invoice.customers[0] : invoice.customers,
@@ -51,7 +51,7 @@ export async function fetchCardData() {
     
     const totalPaidInvoices = formatCurrency(data[0]?.paid)
     const totalPendingInvoices = formatCurrency(data[0]?.pending)
-    //console.log(data)
+    
     return {
       numberOfInvoicesSafe, 
       numberOfCustomersSafe, 
@@ -76,7 +76,7 @@ export async function fetchFilteredInvoices(
     
     const { data: invoices} = await supabase
     .rpc('get_invoices', { query, items_per_page: ITEMS_PER_PAGE, offset_val: offset }) as {data: InvoicesTable[]};
-  
+
     return invoices;
   } catch (error) {
     console.error('Database Error:', error);
