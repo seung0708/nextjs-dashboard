@@ -15,7 +15,8 @@ export const authConfig = {
             return Response.redirect(new URL('/dashboard', nextUrl));
         }
         return true;
-    }, 
-    providers: []
-  }
+    },
+    
+  },
+  providers: []
 } satisfies NextAuthConfig;

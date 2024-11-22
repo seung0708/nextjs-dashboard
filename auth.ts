@@ -8,7 +8,9 @@ import bycrpt from 'bcrypt'
 
 async function getUser(email: string): Promise<User | undefined> {
     try {
-        const user = await supabase.from('users').select('*').eq('email', email)
+        const {data: user, error} = await supabase.from('users').select('*').eq('email', email)
+        console.log(user)
+        return user?.[0]
     } catch(error) {
         console.error('Fiailed to fetch user', error);
         throw new Error('Failed to fetch user');
