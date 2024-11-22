@@ -13,7 +13,7 @@ export async function fetchRevenue() {
   try {
     const {data} = await supabase.from('revenue').select('*') as {data: Revenue[]}
 
-    return data;
+    return data ?? [];
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch revenue data.');
@@ -49,8 +49,8 @@ export async function fetchCardData() {
 
     const {data} = await supabase.rpc('get_invoice_status_totals');
     
-    const totalPaidInvoices = formatCurrency(data[0]?.paid)
-    const totalPendingInvoices = formatCurrency(data[0]?.pending)
+    const totalPaidInvoices = formatCurrency(data[0]?.paid) ?? 0
+    const totalPendingInvoices = formatCurrency(data[0]?.pending) ?? 0
     
     return {
       numberOfInvoicesSafe, 
@@ -77,7 +77,7 @@ export async function fetchFilteredInvoices(
     const { data: invoices} = await supabase
     .rpc('get_invoices', { query, items_per_page: ITEMS_PER_PAGE, offset_val: offset }) as {data: InvoicesTable[]};
 
-    return invoices;
+    return invoices ?? [];
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch invoices.');
@@ -92,7 +92,7 @@ export async function fetchInvoicesPages(query: string) {
     
     const totalPages = Math.ceil(Number(data) / ITEMS_PER_PAGE);
     
-    return totalPages;
+    return totalPages ?? 0;
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch total number of invoices.');
@@ -109,7 +109,7 @@ export async function fetchInvoiceById(id: string) {
       amount: invoice.amount / 100,
     }));
 
-    return invoice?.[0];
+    return invoice?.[0] ?? [];
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch invoice.');
@@ -120,7 +120,7 @@ export async function fetchCustomers() {
   try {
     const {data: customers} = await supabase.from('customers').select('id, name').order('name') as {data: CustomerField[]}
     //console.log(customers)
-    return customers;
+    return customers ?? [];
   } catch (err) {
     console.error('Database Error:', err);
     throw new Error('Failed to fetch all customers.');
@@ -137,7 +137,7 @@ export async function fetchFilteredCustomers(query: string) {
       total_paid: formatCurrency(customer.total_paid),
     }));
 
-    return customers;
+    return customers ?? [];
   } catch (err) {
     console.error('Database Error:', err);
     throw new Error('Failed to fetch customer table.');
