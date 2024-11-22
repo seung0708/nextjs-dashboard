@@ -3,6 +3,7 @@ import {
   CustomersTableType,
   CustomerField,
   Revenue,
+  LatestInvoiceRaw,
   InvoicesTable,
   InvoiceForm
 } from './definitions';
@@ -22,11 +23,12 @@ export async function fetchRevenue() {
 export async function fetchLatestInvoices() {
   try {
     const {data: result } = await supabase.from('invoices').select('amount, customers(id, name, image_url, email), id').order('date', {ascending: false}).limit(5)
-  
-    const latestInvoices = result?.map((invoice) => ({
+    console.log(JSON.stringify(result, null, 2));
+    const latestInvoices: LatestInvoiceRaw[] = result?.map((invoice) => ({
       ...invoice,
-      amount: formatCurrency(invoice.amount),
-    }));
+      customers: Array.isArray(invoice.customers) ? invoice.customers[0] : invoice.customers,
+      amount: invoice.amount,
+    })) ?? [];
     
     return latestInvoices;
   } catch (error) {
