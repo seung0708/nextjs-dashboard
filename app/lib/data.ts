@@ -38,22 +38,22 @@ export async function fetchLatestInvoices() {
 
 export async function fetchCardData() {
   try {
-    const {count: numberOfInvoices} = await supabase.from('invoices').select('*', {count: 'exact'});
+    const {count: numberOfInvoices}: {count: number | null} = await supabase.from('invoices').select('*', {count: 'exact'});
+
+    const numberOfInvoicesSafe = numberOfInvoices ?? 0;
     
-    const {count: numberOfCustomers } = await supabase.from('customers').select('*', {count: 'exact'});
+    const {count: numberOfCustomers }: {count: number | null} = await supabase.from('customers').select('*', {count: 'exact'});
 
-    const {data: invoicePaidData} = await supabase.from
-    ('invoices').select('amount').eq('status', 'paid')
+    const numberOfCustomersSafe = numberOfCustomers ?? 0;
+
+    const {data} = await supabase.rpc('get_invoice_status_totals');
     
-    const {data: invoicePendingData} = await supabase.from('invoices').select('amount').eq('status', 'pending');
-
-    const totalPaidInvoices = invoicePaidData?.reduce((acc, obj) => acc + obj.amount, 0);
-
-    const totalPendingInvoices = invoicePendingData?.reduce((acc, obj) => acc + obj.amount, 0);
-
+    const totalPaidInvoices = formatCurrency(data[0]?.paid)
+    const totalPendingInvoices = formatCurrency(data[0]?.pending)
+    //console.log(data)
     return {
-      numberOfInvoices, 
-      numberOfCustomers, 
+      numberOfInvoicesSafe, 
+      numberOfCustomersSafe, 
       totalPaidInvoices,
       totalPendingInvoices
     }

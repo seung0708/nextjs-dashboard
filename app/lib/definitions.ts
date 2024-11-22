@@ -33,7 +33,7 @@ export type Revenue = {
 
 export type LatestInvoice = {
   id: string;
-  customers: Customer[]
+  customers: Customer
   amount: string;
 };
 
