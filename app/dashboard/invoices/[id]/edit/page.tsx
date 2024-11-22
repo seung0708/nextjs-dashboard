@@ -10,7 +10,7 @@ export default async function Page(props: {params: Promise<{id: string}>}) {
         fetchInvoiceById(id),
         fetchCustomers()
     ])
-
+    //console.log(customers)
     if(!invoice) {
         notFound();
     }

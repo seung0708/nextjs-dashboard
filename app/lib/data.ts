@@ -1,12 +1,17 @@
 import { supabase } from './supabase';
 import {
   CustomersTableType,
+  CustomerField,
+  Revenue,
+  LatestInvoiceRaw,
+  InvoicesTable,
+  InvoiceForm
 } from './definitions';
 import { formatCurrency } from './utils';
 
 export async function fetchRevenue() {
   try {
-    const {data} = await supabase.from('revenue').select('*');
+    const {data} = await supabase.from('revenue').select('*') as {data: Revenue[]}
 
     return data;
   } catch (error) {
@@ -17,9 +22,9 @@ export async function fetchRevenue() {
 
 export async function fetchLatestInvoices() {
   try {
-    const result = await supabase.from('invoices').select('amount, customers(id, name, image_url, email), id').order('date', {ascending: false}).limit(5);
+    const {data: result } = await supabase.from('invoices').select('amount, customers(id, name, image_url, email), id').order('date', {ascending: false}).limit(5) as {data: LatestInvoiceRaw[]}
   
-    const latestInvoices = result.data?.map((invoice) => ({
+    const latestInvoices = result?.map((invoice) => ({
       ...invoice,
       amount: formatCurrency(invoice.amount),
     }));
@@ -33,9 +38,6 @@ export async function fetchLatestInvoices() {
 
 export async function fetchCardData() {
   try {
-    // You can probably combine these into a single SQL query
-    // However, we are intentionally splitting them to demonstrate
-    // how to initialize multiple queries in parallel with JS.
     const {count: numberOfInvoices} = await supabase.from('invoices').select('*', {count: 'exact'});
     
     const {count: numberOfCustomers } = await supabase.from('customers').select('*', {count: 'exact'});
@@ -72,8 +74,8 @@ export async function fetchFilteredInvoices(
   try {
     
     const { data: invoices} = await supabase
-    .rpc('get_invoices', { query, items_per_page: ITEMS_PER_PAGE, offset_val: offset });
-    //console.log(invoices, error)
+    .rpc('get_invoices', { query, items_per_page: ITEMS_PER_PAGE, offset_val: offset }) as {data: InvoicesTable[]};
+  
     return invoices;
   } catch (error) {
     console.error('Database Error:', error);
@@ -98,9 +100,8 @@ export async function fetchInvoicesPages(query: string) {
 
 export async function fetchInvoiceById(id: string) {
   try {
-    const {data, error} = await supabase.from('invoices').select('id, customer_id, amount, status').eq('id', id);
-    console.log(data, error)
-
+    const {data} = await supabase.from('invoices').select('id, customer_id, amount, status').eq('id', id) as {data: InvoiceForm[] };
+    
     const invoice = data?.map((invoice) => ({
       ...invoice,
       // Convert amount from cents to dollars
@@ -116,8 +117,8 @@ export async function fetchInvoiceById(id: string) {
 
 export async function fetchCustomers() {
   try {
-    const {data: customers} = await supabase.from('customers').select('id, name').order('name')
-   
+    const {data: customers} = await supabase.from('customers').select('id, name').order('name') as {data: CustomerField[]}
+    //console.log(customers)
     return customers;
   } catch (err) {
     console.error('Database Error:', err);
@@ -127,7 +128,7 @@ export async function fetchCustomers() {
  
 export async function fetchFilteredCustomers(query: string) {
   try {
-    const {data, error} = await supabase.rpc('search_customers', {query});
+    const {data} = await supabase.rpc('search_customers', {query}) as {data: CustomersTableType[]};
 
     const customers = data.map((customer) => ({
       ...customer,
